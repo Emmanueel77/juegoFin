@@ -1,0 +1,1242 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quiz de Parábolas - Identificación de Puntos Clave</title>
+  <style>
+    :root {
+      --bg: #0f1724;
+      --card: #0b1220;
+      --accent: #10b981; /* Verde esmeralda */
+      --focus: #f59e0b; /* Amarillo para el foco */
+      --vertex: #3b82f6; /* Azul para el vértice */
+      --directrix: #f43f5e; /* Rojo para la directriz */
+      --muted: #94a3b8;
+      --glass: rgba(255, 255, 255, 0.04);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: linear-gradient(180deg, #081126 0%, #071023 100%);
+      color: #e6eef8;
+    }
+    .app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px;
+      min-height: 100vh;
+    }
+    .game-area {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      width: 100%;
+      max-width: 900px;
+    }
+    .panel {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 6px 20px rgba(2, 6, 23, 0.6);
+    }
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 24px;
+      color: var(--accent);
+      text-align: center;
+    }
+    .instructions {
+      color: var(--muted);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .canvas-wrap {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      height: 450px; /* Altura fija para el canvas */
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .quiz-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .quiz-controls button {
+      background: linear-gradient(180deg, var(--accent), #059669);
+      border: 0;
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: #071023;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .quiz-controls button:hover {
+      background: var(--accent);
+    }
+    .status-message {
+      text-align: center;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 15px;
+      min-height: 40px;
+    }
+    .correct {
+      background-color: rgba(16, 185, 129, 0.2); /* Verde claro */
+      color: var(--accent);
+    }
+    .incorrect {
+      background-color: rgba(244, 63, 94, 0.2); /* Rojo claro */
+      color: var(--directrix);
+    }
+    .score-board {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      margin-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .score-item {
+      text-align: center;
+    }
+    .score-item .label {
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .score-item .value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Estilo para los botones de selección de punto */
+    .selection-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    .selection-buttons button {
+        background-color: var(--glass);
+        color: #e6eef8;
+        border: 2px solid transparent;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 120px;
+    }
+    .selection-buttons button:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    .selection-buttons button.selected {
+        border-color: var(--accent);
+        background-color: rgba(16, 185, 129, 0.1);
+    }
+    .selection-buttons button[data-point="focus"] { border-color: var(--focus); }
+    .selection-buttons button[data-point="vertex"] { border-color: var(--vertex); }
+    .selection-buttons button[data-point="directrix"] { border-color: var(--directrix); }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+        .game-area {
+            grid-template-columns: 1fr;
+        }
+        .canvas-wrap {
+            height: 350px;
+        }
+        .selection-buttons {
+            flex-direction: column;
+        }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="game-area">
+      <div class="panel">
+        <h1>Identifica los Puntos Clave de la Parábola</h1>
+        <div class="instructions">
+          Observa la parábola dibujada en el plano. Selecciona el tipo de elemento que deseas identificar (Foco, Vértice, o Directriz) y luego haz clic en el canvas para marcar su ubicación.
+        </div>
+        
+        <div class="canvas-wrap">
+          <canvas id="quiz-canvas"></canvas>
+        </div>
+
+        <div class="selection-buttons" id="selection-buttons">
+            <button data-point="focus">Foco ($\text{F}$)</button>
+            <button data-point="vertex">Vértice ($\text{V}$)</button>
+            <button data-point="directrix">Directriz ($\text{D}$)</button>
+        </div>
+
+        <div class="quiz-controls">
+          <button id="check-btn" disabled>Comprobar Ubicación</button>
+          <button id="next-btn" style="display:none;">Siguiente Parábola</button>
+          <div id="status-message" class="status-message"></div>
+        </div>
+
+        <div class="score-board">
+          <div class="score-item">
+            <div class="label">Correctas</div>
+            <div class="value" id="correct-score">0</div>
+          </div>
+          <div class="score-item">
+            <div class="label">Intentos</div>
+            <div class="value" id="attempts-score">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('quiz-canvas');
+    const ctx = canvas.getContext('2d');
+    const statusMessage = document.getElementById('status-message');
+    const checkBtn = document.getElementById('check-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const selectionButtons = document.getElementById('selection-buttons');
+    const correctScoreElem = document.getElementById('correct-score');
+    const attemptsScoreElem = document.getElementById('attempts-score');
+
+    let W, H;
+    let scale = 30; // Píxeles por unidad en la cuadrícula (Aumentado para mayor claridad)
+    let centerX, centerY;
+    let currentParabola = null;
+    let selectedPointType = null;
+    let userGuess = null;
+    let quizState = 'awaiting_selection'; // 'awaiting_selection', 'awaiting_guess', 'result'
+    let score = { correct: 0, attempts: 0 };
+    const tolerance = 15; // Píxeles de tolerancia para la respuesta
+
+    // --- Helpers ---
+
+    function resizeCanvas() {
+        const wrap = document.querySelector('.canvas-wrap');
+        W = canvas.width = wrap.clientWidth;
+        H = canvas.height = wrap.clientHeight;
+        centerX = W / 2;
+        centerY = H / 2;
+        if (currentParabola) draw();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Convertir de coordenadas del canvas (píxeles) a coordenadas del mundo (unidades cartesianas)
+    function canvasToWorld(x, y) {
+        return {
+            x: (x - centerX) / scale,
+            y: (centerY - y) / scale 
+        };
+    }
+    // Convertir de coordenadas del mundo a coordenadas del canvas
+    function worldToCanvas(x, y) {
+        return {
+            x: x * scale + centerX,
+            y: centerY - y * scale
+        };
+    }
+
+    function updateScore() {
+        correctScoreElem.textContent = score.correct;
+        attemptsScoreElem.textContent = score.attempts;
+    }
+
+    // --- Drawing Functions ---
+
+    function drawGrid() {
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        const step = scale; 
+
+        // Vertical lines
+        for (let x = centerX % step; x < W; x += step) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, H);
+            ctx.stroke();
+        }
+        // Horizontal lines
+        for (let y = centerY % step; y < H; y += step) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+        }
+
+        // Axes (thicker)
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, centerY); // Eje X
+        ctx.lineTo(W, centerY);
+        ctx.moveTo(centerX, 0); // Eje Y
+        ctx.lineTo(centerX, H);
+        ctx.stroke();
+
+        // Origin label
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = '12px Inter';
+        ctx.fillText('(0, 0)', centerX + 5, centerY + 15);
+    }
+
+    function drawParabola(h, k, p, orientation) {
+        ctx.strokeStyle = 'var(--accent)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+
+        // Parámetro P para la ecuación
+        const P_param = 4 * p;
+        
+        if (orientation === 'vertical') {
+            // Ecuación: (x - h)^2 = 4p(y - k) -> y = (1/4p)(x - h)^2 + k
+            
+            // Recorrer puntos X del canvas
+            for (let px = 0; px <= W; px += 1) {
+                const wx = canvasToWorld(px, 0).x; // Coordenada X del mundo
+                
+                // Calcular Y del mundo
+                const wy = (1 / P_param) * (wx - h) * (wx - h) + k;
+                const canvasPoint = worldToCanvas(wx, wy);
+
+                if (canvasPoint.y >= 0 && canvasPoint.y <= H) {
+                    if (px === 0) {
+                        ctx.moveTo(canvasPoint.x, canvasPoint.y);
+                    } else {
+                        ctx.lineTo(canvasPoint.x, canvasPoint.y);
+                    }
+                }
+            }
+        } else { // horizontal
+            // Ecuación: (y - k)^2 = 4p(x - h) -> x = (1/4p)(y - k)^2 + h
+            
+            // Recorrer puntos Y del canvas (invertido para la orientación del canvas)
+            for (let py = 0; py <= H; py += 1) {
+                const wy = canvasToWorld(0, py).y; // Coordenada Y del mundo
+                
+                // Calcular X del mundo
+                const wx = (1 / P_param) * (wy - k) * (wy - k) + h;
+                const canvasPoint = worldToCanvas(wx, wy);
+
+                if (canvasPoint.x >= 0 && canvasPoint.x <= W) {
+                    if (py === 0) {
+                        ctx.moveTo(canvasPoint.x, canvasPoint.y);
+                    } else {
+                        ctx.lineTo(canvasPoint.x, canvasPoint.y);
+                    }
+                }
+            }
+        }
+        ctx.stroke();
+    }
+    
+    function drawDirectrix(directrixEq) {
+        ctx.strokeStyle = 'var(--directrix)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+
+        if (directrixEq.axis === 'y') { // Directriz x = C (Vertical)
+            // C = directrixEq.value (coordenada X del mundo)
+            const canvas_x = worldToCanvas(directrixEq.value, 0).x;
+            ctx.beginPath();
+            ctx.moveTo(canvas_x, 0);
+            ctx.lineTo(canvas_x, H);
+            ctx.stroke();
+        } else { // Directriz y = C (Horizontal)
+            // C = directrixEq.value (coordenada Y del mundo)
+            const canvas_y = worldToCanvas(0, directrixEq.value).y;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas_y);
+            ctx.lineTo(W, canvas_y);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+    }
+
+    function drawPoint(x, y, color, size = 6, label = '') {
+        ctx.fillStyle = color;
+        const p = worldToCanvas(x, y);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#e6eef8';
+        ctx.font = '14px Inter';
+        if (label) {
+            ctx.fillText(label, p.x + 8, p.y + 4);
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        drawGrid();
+
+        if (currentParabola) {
+            const p = currentParabola;
+            drawParabola(p.h, p.k, p.p, p.orientation);
+            drawDirectrix(p.directrix);
+
+            // Dibujar guess si existe
+            if (userGuess && quizState !== 'result') {
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(userGuess.canvasX, userGuess.canvasY, 8, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Dibujar puntos reales y error en el resultado
+            if (quizState === 'result') {
+                const targetPoint = currentParabola[selectedPointType];
+                const targetCanvas = worldToCanvas(targetPoint.x, targetPoint.y || targetPoint.value);
+                const color = userGuess.isCorrect ? 'var(--accent)' : 'var(--directrix)';
+                
+                // Mostrar el punto real (solo si es Foco o Vértice)
+                if (selectedPointType !== 'directrix') {
+                    drawPoint(targetPoint.x, targetPoint.y, color, 8);
+                } else {
+                    // Si es directriz, resaltamos la línea de nuevo
+                    drawDirectrix(p.directrix);
+                }
+                
+                // Mostrar el guess incorrecto si falló
+                if (!userGuess.isCorrect) {
+                     ctx.strokeStyle = 'yellow';
+                     ctx.lineWidth = 2;
+                     ctx.beginPath();
+                     ctx.arc(userGuess.canvasX, userGuess.canvasY, 8, 0, Math.PI * 2);
+                     ctx.stroke();
+                }
+                
+                // Texto de la coordenada real
+                ctx.fillStyle = color;
+                ctx.font = '14px Inter';
+                
+                let labelText = '';
+                if (selectedPointType === 'directrix') {
+                    if (targetPoint.axis === 'x') labelText = `y = ${targetPoint.value.toFixed(1)}`;
+                    else labelText = `x = ${targetPoint.value.toFixed(1)}`;
+                } else {
+                    labelText = `(${targetPoint.x.toFixed(1)}, ${targetPoint.y.toFixed(1)})`;
+                }
+                
+                let textP = selectedPointType === 'directrix' 
+                    ? worldToCanvas(0, targetPoint.axis === 'x' ? targetPoint.value : 0) // Para directriz horizontal
+                    : targetCanvas; 
+                
+                ctx.fillText(`Punto real: ${labelText}`, textP.x + 10, textP.y - 10);
+            }
+        }
+    }
+
+    // --- Quiz Logic ---
+
+    function generateParabola() {
+        const orientation = Math.random() < 0.5 ? 'vertical' : 'horizontal';
+        // Coordenadas del vértice (h, k) - Limitadas para estar centradas
+        const h = Math.round(Math.random() * 4) - 2; // Entre -2 y 2
+        const k = Math.round(Math.random() * 4) - 2; // Entre -2 y 2
+        
+        // Distancia focal p (p != 0)
+        let p = (Math.random() * 1.5) + 0.5; // Entre 0.5 y 2.0
+        if (Math.random() < 0.5) p = -p; 
+        p = parseFloat(p.toFixed(1)); 
+
+        let focus, directrix;
+
+        if (orientation === 'vertical') {
+            focus = { x: h, y: k + p };
+            directrix = { axis: 'x', value: k - p }; // y = k - p (Horizontal)
+        } else { // horizontal
+            focus = { x: h + p, y: k };
+            directrix = { axis: 'y', value: h - p }; // x = h - p (Vertical)
+        }
+        
+        // Redondear las coordenadas del foco
+        focus.x = parseFloat(focus.x.toFixed(1));
+        focus.y = parseFloat(focus.y.toFixed(1));
+        
+        // Redondear el valor de la directriz
+        directrix.value = parseFloat(directrix.value.toFixed(1));
+
+        return {
+            h, k, p, orientation,
+            focus: focus,
+            vertex: { x: h, y: k },
+            directrix: directrix
+        };
+    }
+
+    function startNewRound() {
+        currentParabola = generateParabola();
+        selectedPointType = null;
+        userGuess = null;
+        quizState = 'awaiting_selection';
+        statusMessage.className = 'status-message';
+        statusMessage.textContent = 'Selecciona el elemento a identificar (Foco, Vértice o Directriz).';
+        checkBtn.style.display = 'block';
+        checkBtn.disabled = true;
+        nextBtn.style.display = 'none';
+
+        // Desactivar y quitar estilos de botones
+        Array.from(selectionButtons.children).forEach(btn => {
+            btn.classList.remove('selected');
+            btn.disabled = false;
+        });
+
+        draw();
+    }
+
+    function handleSelection(type) {
+        if (quizState !== 'awaiting_selection' && quizState !== 'awaiting_guess') return;
+        selectedPointType = type;
+        userGuess = null;
+        quizState = 'awaiting_guess';
+        
+        // Estilos de botones
+        Array.from(selectionButtons.children).forEach(btn => {
+            btn.classList.remove('selected');
+        });
+        document.querySelector(`button[data-point="${type}"]`).classList.add('selected');
+
+        statusMessage.className = 'status-message';
+        statusMessage.textContent = `¡Seleccionado! Ahora haz clic en el canvas para marcar la ubicación del ${type === 'focus' ? 'Foco' : type === 'vertex' ? 'Vértice' : 'Directriz'}.`;
+        checkBtn.disabled = true;
+        draw();
+    }
+
+    function handleCanvasClick(e) {
+        if (quizState !== 'awaiting_guess' || !selectedPointType) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const canvasX = e.clientX - rect.left;
+        const canvasY = e.clientY - rect.top;
+        const worldCoords = canvasToWorld(canvasX, canvasY);
+
+        userGuess = {
+            worldX: parseFloat(worldCoords.x.toFixed(1)),
+            worldY: parseFloat(worldCoords.y.toFixed(1)),
+            canvasX,
+            canvasY
+        };
+
+        statusMessage.textContent = `Marca en (${userGuess.worldX.toFixed(1)}, ${userGuess.worldY.toFixed(1)}). Presiona "Comprobar".`;
+        checkBtn.disabled = false;
+        draw();
+    }
+
+    function checkGuess() {
+        if (quizState !== 'awaiting_guess' || !userGuess) return;
+
+        score.attempts++;
+        updateScore();
+        quizState = 'result';
+        checkBtn.style.display = 'none';
+        nextBtn.style.display = 'block';
+
+        const target = currentParabola[selectedPointType];
+        
+        let isCorrect = false;
+
+        if (selectedPointType === 'directrix') {
+             // Comprobación para la directriz (línea)
+             const targetCanvas = worldToCanvas(target.axis === 'y' ? target.value : 0, target.axis === 'x' ? target.value : 0);
+             
+             if (target.axis === 'x') { // Directriz horizontal y = C
+                 const targetCanvasY = targetCanvas.y;
+                 if (Math.abs(userGuess.canvasY - targetCanvasY) <= tolerance) {
+                     isCorrect = true;
+                 }
+             } else { // Directriz vertical x = C
+                 const targetCanvasX = targetCanvas.x;
+                 if (Math.abs(userGuess.canvasX - targetCanvasX) <= tolerance) {
+                     isCorrect = true;
+                 }
+             }
+        } else {
+            // Comprobación para Foco y Vértice (puntos)
+            const targetCanvas = worldToCanvas(target.x, target.y);
+            const distance = Math.hypot(userGuess.canvasX - targetCanvas.x, userGuess.canvasY - targetCanvas.y);
+            if (distance <= tolerance) {
+                isCorrect = true;
+            }
+        }
+        
+        userGuess.isCorrect = isCorrect;
+
+        Array.from(selectionButtons.children).forEach(btn => btn.disabled = true); // Desactivar selección tras respuesta
+
+        if (isCorrect) {
+            score.correct++;
+            statusMessage.className = 'status-message correct';
+            statusMessage.textContent = `¡Correcto! Has identificado el ${selectedPointType} correctamente. Tuviste un error de menos de ${tolerance} píxeles.`;
+        } else {
+            statusMessage.className = 'status-message incorrect';
+            
+            let labelText = '';
+            if (selectedPointType === 'directrix') {
+                if (target.axis === 'x') labelText = `y = ${target.value.toFixed(1)}`;
+                else labelText = `x = ${target.value.toFixed(1)}`;
+            } else {
+                labelText = `(${target.x.toFixed(1)}, ${target.y.toFixed(1)})`;
+            }
+            
+            statusMessage.textContent = `Incorrecto. El ${selectedPointType} real está en ${labelText}. ¡Sigue practicando!`;
+        }
+
+        updateScore();
+        draw();
+    }
+
+    // --- Event Listeners ---
+    selectionButtons.addEventListener('click', e => {
+        if (e.target.tagName === 'BUTTON') {
+            handleSelection(e.target.dataset.point);
+        }
+    });
+
+    canvas.addEventListener('click', handleCanvasClick);
+    checkBtn.addEventListener('click', checkGuess);
+    nextBtn.addEventListener('click', startNewRound);
+
+    // Initial load
+    resizeCanvas(); // Llama a resize para establecer W, H, centerX, centerY
+    startNewRound();
+  </script>
+</body>
+</html>
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quiz de Parábolas - Identificación de Puntos Clave</title>
+  <style>
+    :root {
+      --bg: #0f1724;
+      --card: #0b1220;
+      --accent: #10b981; /* Verde esmeralda */
+      --focus: #f59e0b; /* Amarillo para el foco */
+      --vertex: #3b82f6; /* Azul para el vértice */
+      --directrix: #f43f5e; /* Rojo para la directriz */
+      --muted: #94a3b8;
+      --glass: rgba(255, 255, 255, 0.04);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: linear-gradient(180deg, #081126 0%, #071023 100%);
+      color: #e6eef8;
+    }
+    .app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px;
+      min-height: 100vh;
+    }
+    .game-area {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      width: 100%;
+      max-width: 900px;
+    }
+    .panel {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 6px 20px rgba(2, 6, 23, 0.6);
+    }
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 24px;
+      color: var(--accent);
+      text-align: center;
+    }
+    .instructions {
+      color: var(--muted);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .canvas-wrap {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      height: 450px; /* Altura fija para el canvas */
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .quiz-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .quiz-controls button {
+      background: linear-gradient(180deg, var(--accent), #059669);
+      border: 0;
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: #071023;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .quiz-controls button:hover {
+      background: var(--accent);
+    }
+    .status-message {
+      text-align: center;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 15px;
+      min-height: 40px;
+    }
+    .correct {
+      background-color: rgba(16, 185, 129, 0.2); /* Verde claro */
+      color: var(--accent);
+    }
+    .incorrect {
+      background-color: rgba(244, 63, 94, 0.2); /* Rojo claro */
+      color: var(--directrix);
+    }
+    .score-board {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      margin-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .score-item {
+      text-align: center;
+    }
+    .score-item .label {
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .score-item .value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Estilo para los botones de selección de punto */
+    .selection-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    .selection-buttons button {
+        background-color: var(--glass);
+        color: #e6eef8;
+        border: 2px solid transparent;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 120px;
+    }
+    .selection-buttons button:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    .selection-buttons button.selected {
+        border-color: var(--accent);
+        background-color: rgba(16, 185, 129, 0.1);
+    }
+    .selection-buttons button[data-point="focus"] { border-color: var(--focus); }
+    .selection-buttons button[data-point="vertex"] { border-color: var(--vertex); }
+    .selection-buttons button[data-point="directrix"] { border-color: var(--directrix); }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+        .game-area {
+            grid-template-columns: 1fr;
+        }
+        .canvas-wrap {
+            height: 350px;
+        }
+        .selection-buttons {
+            flex-direction: column;
+        }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="game-area">
+      <div class="panel">
+        <h1>Identifica los Puntos Clave de la Parábola</h1>
+        <div class="instructions">
+          Observa la parábola dibujada en el plano. Selecciona el tipo de elemento que deseas identificar (Foco, Vértice, o Directriz) y luego haz clic en el canvas para marcar su ubicación.
+        </div>
+        
+        <div class="canvas-wrap">
+          <canvas id="quiz-canvas"></canvas>
+        </div>
+
+        <div class="selection-buttons" id="selection-buttons">
+            <button data-point="focus">Foco ($\text{F}$)</button>
+            <button data-point="vertex">Vértice ($\text{V}$)</button>
+            <button data-point="directrix">Directriz ($\text{D}$)</button>
+        </div>
+
+        <div class="quiz-controls">
+          <button id="check-btn" disabled>Comprobar Ubicación</button>
+          <button id="next-btn" style="display:none;">Siguiente Parábola</button>
+          <div id="status-message" class="status-message"></div>
+        </div>
+
+        <div class="score-board">
+          <div class="score-item">
+            <div class="label">Correctas</div>
+            <div class="value" id="correct-score">0</div>
+          </div>
+          <div class="score-item">
+            <div class="label">Intentos</div>
+            <div class="value" id="attempts-score">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('quiz-canvas');
+    const ctx = canvas.getContext('2d');
+    const statusMessage = document.getElementById('status-message');
+    const checkBtn = document.getElementById('check-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const selectionButtons = document.getElementById('selection-buttons');
+    const correctScoreElem = document.getElementById('correct-score');
+    const attemptsScoreElem = document.getElementById('attempts-score');
+
+    let W, H;
+    let scale = 30; // Píxeles por unidad en la cuadrícula (Aumentado para mayor claridad)
+    let centerX, centerY;
+    let currentParabola = null;
+    let selectedPointType = null;
+    let userGuess = null;
+    let quizState = 'awaiting_selection'; // 'awaiting_selection', 'awaiting_guess', 'result'
+    let score = { correct: 0, attempts: 0 };
+    const tolerance = 15; // Píxeles de tolerancia para la respuesta
+
+    // --- Helpers ---
+
+    function resizeCanvas() {
+        const wrap = document.querySelector('.canvas-wrap');
+        W = canvas.width = wrap.clientWidth;
+        H = canvas.height = wrap.clientHeight;
+        centerX = W / 2;
+        centerY = H / 2;
+        if (currentParabola) draw();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Convertir de coordenadas del canvas (píxeles) a coordenadas del mundo (unidades cartesianas)
+    function canvasToWorld(x, y) {
+        return {
+            x: (x - centerX) / scale,
+            y: (centerY - y) / scale 
+        };
+    }
+    // Convertir de coordenadas del mundo a coordenadas del canvas
+    function worldToCanvas(x, y) {
+        return {
+            x: x * scale + centerX,
+            y: centerY - y * scale
+        };
+    }
+
+    function updateScore() {
+        correctScoreElem.textContent = score.correct;
+        attemptsScoreElem.textContent = score.attempts;
+    }
+
+    // --- Drawing Functions ---
+
+    function drawGrid() {
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        const step = scale; 
+
+        // Vertical lines
+        for (let x = centerX % step; x < W; x += step) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, H);
+            ctx.stroke();
+        }
+        // Horizontal lines
+        for (let y = centerY % step; y < H; y += step) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+        }
+
+        // Axes (thicker)
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, centerY); // Eje X
+        ctx.lineTo(W, centerY);
+        ctx.moveTo(centerX, 0); // Eje Y
+        ctx.lineTo(centerX, H);
+        ctx.stroke();
+
+        // Origin label
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = '12px Inter';
+        ctx.fillText('(0, 0)', centerX + 5, centerY + 15);
+    }
+
+    function drawParabola(h, k, p, orientation) {
+        ctx.strokeStyle = 'var(--accent)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+
+        // Parámetro P para la ecuación
+        const P_param = 4 * p;
+        
+        if (orientation === 'vertical') {
+            // Ecuación: (x - h)^2 = 4p(y - k) -> y = (1/4p)(x - h)^2 + k
+            
+            // Recorrer puntos X del canvas
+            for (let px = 0; px <= W; px += 1) {
+                const wx = canvasToWorld(px, 0).x; // Coordenada X del mundo
+                
+                // Calcular Y del mundo
+                const wy = (1 / P_param) * (wx - h) * (wx - h) + k;
+                const canvasPoint = worldToCanvas(wx, wy);
+
+                if (canvasPoint.y >= 0 && canvasPoint.y <= H) {
+                    if (px === 0) {
+                        ctx.moveTo(canvasPoint.x, canvasPoint.y);
+                    } else {
+                        ctx.lineTo(canvasPoint.x, canvasPoint.y);
+                    }
+                }
+            }
+        } else { // horizontal
+            // Ecuación: (y - k)^2 = 4p(x - h) -> x = (1/4p)(y - k)^2 + h
+            
+            // Recorrer puntos Y del canvas (invertido para la orientación del canvas)
+            for (let py = 0; py <= H; py += 1) {
+                const wy = canvasToWorld(0, py).y; // Coordenada Y del mundo
+                
+                // Calcular X del mundo
+                const wx = (1 / P_param) * (wy - k) * (wy - k) + h;
+                const canvasPoint = worldToCanvas(wx, wy);
+
+                if (canvasPoint.x >= 0 && canvasPoint.x <= W) {
+                    if (py === 0) {
+                        ctx.moveTo(canvasPoint.x, canvasPoint.y);
+                    } else {
+                        ctx.lineTo(canvasPoint.x, canvasPoint.y);
+                    }
+                }
+            }
+        }
+        ctx.stroke();
+    }
+    
+    function drawDirectrix(directrixEq) {
+        ctx.strokeStyle = 'var(--directrix)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+
+        if (directrixEq.axis === 'y') { // Directriz x = C (Vertical)
+            // C = directrixEq.value (coordenada X del mundo)
+            const canvas_x = worldToCanvas(directrixEq.value, 0).x;
+            ctx.beginPath();
+            ctx.moveTo(canvas_x, 0);
+            ctx.lineTo(canvas_x, H);
+            ctx.stroke();
+        } else { // Directriz y = C (Horizontal)
+            // C = directrixEq.value (coordenada Y del mundo)
+            const canvas_y = worldToCanvas(0, directrixEq.value).y;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas_y);
+            ctx.lineTo(W, canvas_y);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+    }
+
+    function drawPoint(x, y, color, size = 6, label = '') {
+        ctx.fillStyle = color;
+        const p = worldToCanvas(x, y);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#e6eef8';
+        ctx.font = '14px Inter';
+        if (label) {
+            ctx.fillText(label, p.x + 8, p.y + 4);
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        drawGrid();
+
+        if (currentParabola) {
+            const p = currentParabola;
+            drawParabola(p.h, p.k, p.p, p.orientation);
+            drawDirectrix(p.directrix);
+
+            // Dibujar guess si existe
+            if (userGuess && quizState !== 'result') {
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(userGuess.canvasX, userGuess.canvasY, 8, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Dibujar puntos reales y error en el resultado
+            if (quizState === 'result') {
+                const targetPoint = currentParabola[selectedPointType];
+                const targetCanvas = worldToCanvas(targetPoint.x, targetPoint.y || targetPoint.value);
+                const color = userGuess.isCorrect ? 'var(--accent)' : 'var(--directrix)';
+                
+                // Mostrar el punto real (solo si es Foco o Vértice)
+                if (selectedPointType !== 'directrix') {
+                    drawPoint(targetPoint.x, targetPoint.y, color, 8);
+                } else {
+                    // Si es directriz, resaltamos la línea de nuevo
+                    drawDirectrix(p.directrix);
+                }
+                
+                // Mostrar el guess incorrecto si falló
+                if (!userGuess.isCorrect) {
+                     ctx.strokeStyle = 'yellow';
+                     ctx.lineWidth = 2;
+                     ctx.beginPath();
+                     ctx.arc(userGuess.canvasX, userGuess.canvasY, 8, 0, Math.PI * 2);
+                     ctx.stroke();
+                }
+                
+                // Texto de la coordenada real
+                ctx.fillStyle = color;
+                ctx.font = '14px Inter';
+                
+                let labelText = '';
+                if (selectedPointType === 'directrix') {
+                    if (targetPoint.axis === 'x') labelText = `y = ${targetPoint.value.toFixed(1)}`;
+                    else labelText = `x = ${targetPoint.value.toFixed(1)}`;
+                } else {
+                    labelText = `(${targetPoint.x.toFixed(1)}, ${targetPoint.y.toFixed(1)})`;
+                }
+                
+                let textP = selectedPointType === 'directrix' 
+                    ? worldToCanvas(0, targetPoint.axis === 'x' ? targetPoint.value : 0) // Para directriz horizontal
+                    : targetCanvas; 
+                
+                ctx.fillText(`Punto real: ${labelText}`, textP.x + 10, textP.y - 10);
+            }
+        }
+    }
+
+    // --- Quiz Logic ---
+
+    function generateParabola() {
+        const orientation = Math.random() < 0.5 ? 'vertical' : 'horizontal';
+        // Coordenadas del vértice (h, k) - Limitadas para estar centradas
+        const h = Math.round(Math.random() * 4) - 2; // Entre -2 y 2
+        const k = Math.round(Math.random() * 4) - 2; // Entre -2 y 2
+        
+        // Distancia focal p (p != 0)
+        let p = (Math.random() * 1.5) + 0.5; // Entre 0.5 y 2.0
+        if (Math.random() < 0.5) p = -p; 
+        p = parseFloat(p.toFixed(1)); 
+
+        let focus, directrix;
+
+        if (orientation === 'vertical') {
+            focus = { x: h, y: k + p };
+            directrix = { axis: 'x', value: k - p }; // y = k - p (Horizontal)
+        } else { // horizontal
+            focus = { x: h + p, y: k };
+            directrix = { axis: 'y', value: h - p }; // x = h - p (Vertical)
+        }
+        
+        // Redondear las coordenadas del foco
+        focus.x = parseFloat(focus.x.toFixed(1));
+        focus.y = parseFloat(focus.y.toFixed(1));
+        
+        // Redondear el valor de la directriz
+        directrix.value = parseFloat(directrix.value.toFixed(1));
+
+        return {
+            h, k, p, orientation,
+            focus: focus,
+            vertex: { x: h, y: k },
+            directrix: directrix
+        };
+    }
+
+    function startNewRound() {
+        currentParabola = generateParabola();
+        selectedPointType = null;
+        userGuess = null;
+        quizState = 'awaiting_selection';
+        statusMessage.className = 'status-message';
+        statusMessage.textContent = 'Selecciona el elemento a identificar (Foco, Vértice o Directriz).';
+        checkBtn.style.display = 'block';
+        checkBtn.disabled = true;
+        nextBtn.style.display = 'none';
+
+        // Desactivar y quitar estilos de botones
+        Array.from(selectionButtons.children).forEach(btn => {
+            btn.classList.remove('selected');
+            btn.disabled = false;
+        });
+
+        draw();
+    }
+
+    function handleSelection(type) {
+        if (quizState !== 'awaiting_selection' && quizState !== 'awaiting_guess') return;
+        selectedPointType = type;
+        userGuess = null;
+        quizState = 'awaiting_guess';
+        
+        // Estilos de botones
+        Array.from(selectionButtons.children).forEach(btn => {
+            btn.classList.remove('selected');
+        });
+        document.querySelector(`button[data-point="${type}"]`).classList.add('selected');
+
+        statusMessage.className = 'status-message';
+        statusMessage.textContent = `¡Seleccionado! Ahora haz clic en el canvas para marcar la ubicación del ${type === 'focus' ? 'Foco' : type === 'vertex' ? 'Vértice' : 'Directriz'}.`;
+        checkBtn.disabled = true;
+        draw();
+    }
+
+    function handleCanvasClick(e) {
+        if (quizState !== 'awaiting_guess' || !selectedPointType) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const canvasX = e.clientX - rect.left;
+        const canvasY = e.clientY - rect.top;
+        const worldCoords = canvasToWorld(canvasX, canvasY);
+
+        userGuess = {
+            worldX: parseFloat(worldCoords.x.toFixed(1)),
+            worldY: parseFloat(worldCoords.y.toFixed(1)),
+            canvasX,
+            canvasY
+        };
+
+        statusMessage.textContent = `Marca en (${userGuess.worldX.toFixed(1)}, ${userGuess.worldY.toFixed(1)}). Presiona "Comprobar".`;
+        checkBtn.disabled = false;
+        draw();
+    }
+
+    function checkGuess() {
+        if (quizState !== 'awaiting_guess' || !userGuess) return;
+
+        score.attempts++;
+        updateScore();
+        quizState = 'result';
+        checkBtn.style.display = 'none';
+        nextBtn.style.display = 'block';
+
+        const target = currentParabola[selectedPointType];
+        
+        let isCorrect = false;
+
+        if (selectedPointType === 'directrix') {
+             // Comprobación para la directriz (línea)
+             const targetCanvas = worldToCanvas(target.axis === 'y' ? target.value : 0, target.axis === 'x' ? target.value : 0);
+             
+             if (target.axis === 'x') { // Directriz horizontal y = C
+                 const targetCanvasY = targetCanvas.y;
+                 if (Math.abs(userGuess.canvasY - targetCanvasY) <= tolerance) {
+                     isCorrect = true;
+                 }
+             } else { // Directriz vertical x = C
+                 const targetCanvasX = targetCanvas.x;
+                 if (Math.abs(userGuess.canvasX - targetCanvasX) <= tolerance) {
+                     isCorrect = true;
+                 }
+             }
+        } else {
+            // Comprobación para Foco y Vértice (puntos)
+            const targetCanvas = worldToCanvas(target.x, target.y);
+            const distance = Math.hypot(userGuess.canvasX - targetCanvas.x, userGuess.canvasY - targetCanvas.y);
+            if (distance <= tolerance) {
+                isCorrect = true;
+            }
+        }
+        
+        userGuess.isCorrect = isCorrect;
+
+        Array.from(selectionButtons.children).forEach(btn => btn.disabled = true); // Desactivar selección tras respuesta
+
+        if (isCorrect) {
+            score.correct++;
+            statusMessage.className = 'status-message correct';
+            statusMessage.textContent = `¡Correcto! Has identificado el ${selectedPointType} correctamente. Tuviste un error de menos de ${tolerance} píxeles.`;
+        } else {
+            statusMessage.className = 'status-message incorrect';
+            
+            let labelText = '';
+            if (selectedPointType === 'directrix') {
+                if (target.axis === 'x') labelText = `y = ${target.value.toFixed(1)}`;
+                else labelText = `x = ${target.value.toFixed(1)}`;
+            } else {
+                labelText = `(${target.x.toFixed(1)}, ${target.y.toFixed(1)})`;
+            }
+            
+            statusMessage.textContent = `Incorrecto. El ${selectedPointType} real está en ${labelText}. ¡Sigue practicando!`;
+        }
+
+        updateScore();
+        draw();
+    }
+
+    // --- Event Listeners ---
+    selectionButtons.addEventListener('click', e => {
+        if (e.target.tagName === 'BUTTON') {
+            handleSelection(e.target.dataset.point);
+        }
+    });
+
+    canvas.addEventListener('click', handleCanvasClick);
+    checkBtn.addEventListener('click', checkGuess);
+    nextBtn.addEventListener('click', startNewRound);
+
+    // Initial load
+    resizeCanvas(); // Llama a resize para establecer W, H, centerX, centerY
+    startNewRound();
+  </script>
+</body>
+</html>
+
